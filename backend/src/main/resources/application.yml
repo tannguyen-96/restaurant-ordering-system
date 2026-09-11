@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:mydb}
+    username: ${POSTGRES_USER:tannguyen}
+    password: ${POSTGRES_PASSWORD:1234}
+    hikari:
+      initialization-fail-timeout: -1
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: lazy
+
+server:
+  port: 8080

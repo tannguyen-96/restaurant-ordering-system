@@ -1,0 +1,10 @@
+backend
+./mvnw spring-boot:run (java21)
+localhost:8080
+
+frontend
+npm run dev (node24)
+localhost:3000
+
+daisyui theme
+https://daisyui.com/docs/themes/
