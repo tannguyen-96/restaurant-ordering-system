@@ -1,0 +1,4 @@
+React → Vercel
+Spring Boot → Render or Google Cloud Run
+PostgreSQL → Neon
+Authen -> auth0
