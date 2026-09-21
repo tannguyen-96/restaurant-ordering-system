@@ -1,6 +1,12 @@
 backend
-./mvnw spring-boot:run (java21)
-localhost:8080
+# Run the default application
+./gradlew bootRun
+
+# Run the application with a specific profile (e.g., local)
+./gradlew bootRun --args='--spring.profiles.active=local'
+
+# link swagger-ui
+http://localhost:8080/swagger-ui.html
 
 frontend
 npm run dev (node24)

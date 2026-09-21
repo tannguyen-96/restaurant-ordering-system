@@ -1,0 +1,88 @@
+databaseChangeLog:
+  # 1. Create the schema
+  - changeSet:
+      id: 1-create-schema-order
+      author: system
+      changes:
+        - sql:
+            sql: CREATE SCHEMA IF NOT EXISTS "order";
+
+  # 2. Create the 'orders' table
+  - changeSet:
+      id: 2-create-orders-table
+      author: system
+      changes:
+        - createTable:
+            schemaName: "order"
+            tableName: orders
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL # Auto-increment in PostgreSQL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: order_number
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_amount
+                  type: DECIMAL(19, 2)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+
+  # 3. Create the 'order_items' table
+  - changeSet:
+      id: 3-create-order-items-table
+      author: system
+      changes:
+        - createTable:
+            schemaName: "order"
+            tableName: order_items
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: DECIMAL(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: order_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+
+        # Add Foreign Key for order_id
+        - addForeignKeyConstraint:
+            baseTableSchemaName: "order"
+            baseTableName: order_items
+            baseColumnNames: order_id
+            referencedTableSchemaName: "order"
+            referencedTableName: orders
+            referencedColumnNames: id
+            constraintName: fk_order_items_order_id

@@ -8,8 +8,9 @@ spring:
     hikari:
       initialization-fail-timeout: -1
   jpa:
+    open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
@@ -19,6 +20,14 @@ spring:
     jpa:
       repositories:
         bootstrap-mode: lazy
+
+  liquibase:
+    # Liquibase master file location
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
 
 server:
   port: 8080
