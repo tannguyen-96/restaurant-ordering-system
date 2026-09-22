@@ -9,7 +9,6 @@ spring:
     hikari:
       initialization-fail-timeout: -1
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
     hibernate:
       ddl-auto: validate
