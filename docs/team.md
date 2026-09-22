@@ -1,171 +1,163 @@
 # Team, phase, Definition of Done kỹ thuật
 
-Team 4 người, ngoài giờ, ~6–8 giờ tập trung / người / tuần. Công cụ free: GitHub, Trello (sau), GitHub Actions.
+Team 4 người, ngoài giờ, ~6–8 giờ / người / tuần. Free: GitHub, Trello (sau), GitHub Actions.
 
-Làm **vertical slice**, không chia theo layer rồi ghép cuối tuần.
-
-Tên người chưa gán. File này để team thảo luận rồi reply. Không tự gán.
+Làm **vertical slice**. Tên chưa gán — form cuối file.
 
 ## Vai trò — đúng một DRI / module
 
 ### Member 1 — DRI QR + Session
 
-Own: restaurant, table, qr, session, session_guest, timeout.
+Own: restaurant, table, qr, session, session_guest, timeout. Liquibase changeset module này.
 
 Demo: tạo bàn → QR → quét → create/join → **2 máy cùng session**.
 
 ### Member 2 — DRI Order + Payment
 
-Own: order, payment, PAY_AT_END, PAY_WITH_ORDER, tiền, idempotency, state payment.
+Own: evolve `Order`/`OrderItem` **đã có trên `main`**, payment, PAY_AT_END rồi PAY_WITH_ORDER, tiền, idempotency.
 
-Demo: review → payment → order → checkout.
+Demo: review → (bỏ tin giá client) → payment → order → checkout.
 
-Làm theo OpenAPI, không bám UI.
+Không viết UI. OpenAPI module mình.
 
 ### Member 3 — DRI Customer UI
 
-Own: `/q/:qrToken`, session UI, menu, cart, review, payment UI, order status.
+Own: CRA router `/q/:qrToken`, session UI, menu, cart, review, payment UI. Gọi Spring thật.
 
 Demo: scan → menu → cart → review → pay → status.
 
-Không chốt màn hình chỉ với mock nghiệp vụ.
+Không Done nếu chỉ mock.
 
 ### Member 4 — DRI Integration + Staff
 
-Own: staff auth/dashboard/orders/tables/menu availability, **review** OpenAPI + STOMP, Compose, Actions, E2E happy path, contract test.
+Own: staff UI, review OpenAPI, **Docker Compose** (Postgres + backend Dockerfile + CRA), Actions, E2E.
 
-Member 4 là chủ **tích hợp**, không phải người viết hết staff UI + hết contract.
-
-**Giảm tải (khác bản Codex):** DRI 1 và 2 tự viết OpenAPI module mình. Member 4 review, giữ Swagger xanh, chạy E2E. Staff UI Member 4 làm; nếu quá tải, Member 3 nhận `/staff/menu` sau khi customer menu xong.
+DRI 1–2 tự viết OpenAPI module. Member 4 review, Swagger xanh, Compose chạy mọi máy. Quá tải staff menu → Member 3 nhận sau customer menu.
 
 ## Working agreements
 
-1. **Phase 1 serial.** Không feature branch nghiệp vụ khi Compose chưa chạy đều mọi máy.
-2. **Song song hạn chế từ Phase 2.** Contract viết trước phần phụ thuộc.
-3. **Một DRI / module.** Người khác được PR; DRI duyệt nghiệp vụ.
-4. **Không ship màn FE** nếu thiếu Spring endpoint + example OpenAPI.
-5. Mock UI chỉ để layout, không tính Done.
-6. **Tích hợp trước polish.** Không animation/design system khi E2E gãy.
+1. **Phase 1 serial.** Không feature branch nghiệp vụ khi Compose (hoặc ít nhất `bootRun` + Postgres + CRA) chưa chạy đều mọi máy.
+2. Song song hạn chế từ Phase 2. Contract trước phần phụ thuộc.
+3. Một DRI / module. Người khác được PR; DRI duyệt nghiệp vụ.
+4. Không ship màn FE nếu thiếu Spring endpoint + example OpenAPI.
+5. Mock chỉ layout, không tính Done.
+6. Tích hợp trước polish.
 7. PR nhỏ: một business rule, một test chấp nhận.
+8. **Không đổi stack đã khóa** (Gradle, Liquibase, CRA) trong PR feature.
 
-## Lễ nghi ngoài giờ (không Scrum đầy đủ)
+## Lễ nghi ngoài giờ
 
-Không daily 15 phút nếu không ai unblock. Trello setup sau.
+Không daily nếu không unblock. Trello sau `chốt`.
 
 | Session | Thời lượng | Việc |
 |---|---|---|
-| 1 Planning | 20–30 phút | Phase hiện tại, contract blocked, PR, E2E |
-| 2 Build | 2–3 giờ | Mỗi người làm slice |
-| 3 Integration | 1.5–2 giờ | Member 4: Compose + contract + FE + E2E |
-| 4 Review/fix | 1.5–2 giờ | Test fail, review, milestone kế |
+| 1 Planning | 20–30 phút | Phase, contract blocked, PR |
+| 2 Build | 2–3 giờ | Slice |
+| 3 Integration | 1.5–2 giờ | Member 4: Compose + contract + FE |
+| 4 Review/fix | 1.5–2 giờ | Test fail, review |
 
-Xong local ≠ xong. Xong = Compose + contract + UI (nếu user-facing).
+Xong local ≠ xong. Xong = chạy được trên môi trường team thống nhất (Compose khi có) + contract + UI nếu user-facing.
 
-## Phase — entry / exit
+## Phase — bám `main`
 
-### Phase 1 — Foundation (cả 4, serial)
+### Phase 0 — As-built (đã xong trên `main`)
 
-Compose, Postgres, Redis, Flyway, skeleton module Spring, Vite+Tailwind+DaisyUI, OpenAPI, Actions, seed **chỉ** dev/demo.
+Gradle boot, Liquibase `001`, Order CRUD, Swagger, Dockerfile backend, CRA hello.
 
-Exit: `docker compose up` → React gọi Spring, Spring↔Postgres/Redis, Flyway chạy, Actions xanh, Swagger mở được.
+### Phase 1 — Foundation (cả 4, serial) — **tiếp theo**
+
+- Root `.gitignore` (hiện **không có**)
+- `.env.example` + bỏ hardcode `tannguyen`/`1234` trong `application.yaml`
+- `docker-compose.yml`: postgres + backend (Dockerfile sẵn) + frontend
+- CRA gọi `GET /api/v1/orders` (một màn list/create tối thiểu) để chứng minh FE↔BE
+- GitHub Actions: `./gradlew test` + `npm test -- --watchAll=false` + compose smoke (`/api/v1/orders` hoặc swagger)
+- **Không** thêm Redis/STOMP/Vite/Flyway ở phase này
+
+Exit: `docker compose up --build` → CRA mở, Spring Swagger mở, Liquibase chạy, POST tạo order được, CI xanh.
 
 ### Phase 2 — Restaurant / Table / QR
 
-Exit: Admin login → tạo Table 01 → QR → quét → backend ra đúng bàn.
+Exit: Admin login (JWT lần đầu) → Table 01 → QR → quét → backend đúng bàn.
 
 ### Phase 3 — Session + Guest
 
-Exit: 2 máy quét cùng QR → cùng session. Test concurrent: chỉ một session active.
+Exit: 2 máy cùng QR → cùng session. Unique active session / bàn ở Postgres.
 
-**Cổng cứng:** không vào Phase 5 khi Phase 3+4 chưa chạy 2 máy / 1 bàn.
+**Cổng cứng:** không Phase 5 khi Phase 3+4 chưa chạy 2 máy / 1 bàn.
 
 ### Phase 4 — Menu + cart local + review
 
-Exit: QR → menu → add → cart → review. Server từ chối: giá giả, món hết, item sai, session hết. Hai máy hai giỏ.
+Exit: QR → menu → cart → review. Server từ chối giá giả, món hết, session hết. **Bỏ `price` trên create order public.**
 
-### Phase 5 — Order
+### Phase 5 — Order + Payment
 
-PAY_AT_END trước: order, status, order thêm, checkout, lock, staff pay, close, AVAILABLE.
-
-PAY_WITH_ORDER sau: review → pay → materialize → close → bàn có thể OCCUPIED.
+PAY_AT_END trước trên entity Order hiện có (thêm `session_id`, kitchen status, snapshot giá). PAY_WITH_ORDER sau.
 
 Exit: cả hai mode từ UI thật, Spring thật.
 
 ### Phase 6 — STOMP
 
-5 event + reconnect/resync. Exit: 2 browser thấy đổi trạng thái, không poll. Cart không bắn event.
+5 event + reconnect/resync. Cart không bắn event.
 
 ### Phase 7 — Staff + audit
 
-Exit: staff chạy demo không cần vào DB.
+Staff demo không cần vào DB.
 
 ### Phase 8 — Hardening
 
-Double-click confirm, duplicate payment, concurrent session, staff lạ, session hết, món vừa hết, giá đổi trước review, limit ảnh, requestId.
+Double-click, duplicate payment, concurrent session, session hết, món vừa hết, giá đổi trước review.
 
 ### Phase 9 — Demo
 
-Seed staging, in QR, E2E đủ 2 mode, 2 máy khách + 1 staff.
+Seed, in QR, 2 khách + 1 staff.
 
-## Test — đúng rule, không phủ hết
+## Test
 
-Backend: session lifecycle/timeout, tách bàn/session, availability, price snapshot, order/payment/checkout, permission.
+Backend: session lifecycle, một session/bàn, availability, price snapshot, payment/checkout, permission.  
+As-built: chỉ `contextLoads` — Phase 1 thêm test `createOrder` tổng tiền.
 
-Integration: một session/bàn, payment+order trong transaction, idempotency, Flyway, authz. Postgres/Testcontainers hoặc Compose.
+E2E tối thiểu khi đủ phase: QR → session → menu → cart → review → pay → order → staff → realtime → checkout.
 
-WS: 5 event + reconnect.
+## DoD từng card
 
-FE: QR, cart, review, pay, order state, checkout, staff. Không test hết component tĩnh.
-
-E2E tối thiểu: QR → session → menu → cart → review → pay → order → staff → realtime → checkout. Cả hai mode.
-
-TDD cho rule tiền/session/payment: test fail trước, rồi code. Không bắt TDD cho CSS.
-
-## DoD từng card (kỹ thuật)
-
-Card không Done nếu thiếu phần áp dụng:
-
-- [ ] OpenAPI đã cập nhật
-- [ ] Flyway nếu đổi schema
-- [ ] Test tự động cho business rule
-- [ ] 1 người review PR
-- [ ] Chạy được trên Docker Compose
-- [ ] UI khách hoặc staff cập nhật nếu API user-facing
+- [ ] OpenAPI cập nhật nếu đụng API
+- [ ] Liquibase file **mới** nếu đổi schema (không sửa `001`)
+- [ ] Test cho business rule
+- [ ] 1 review
+- [ ] Chạy được Compose (sau Phase 1) hoặc `bootRun` + CRA (trước Compose)
+- [ ] UI cập nhật nếu user-facing
 - [ ] Không secret trong git
-- [ ] Error code đã ghi
-- [ ] STOMP event nếu đụng realtime
-
-DoD sản phẩm: `product.md`.
+- [ ] Error code (API mới)
+- [ ] STOMP event nếu đụng realtime (từ Phase 6)
 
 ## Rủi ro
 
 | Rủi ro | Xử lý |
 |---|---|
-| Member 4 thành bottleneck | DRI tự viết OpenAPI; M4 review; chia staff menu cho M3 nếu cần |
-| Làm song song quá sớm | Phase 1 serial; cổng 2 máy trước Phase 5 |
-| Polish UI trước E2E | Rule 6 |
-| 2 backend / T3 len lút | `architecture.md` decision log |
+| Rewrite Vite/Flyway len lút | `architecture.md` decision log; Member 4 reject PR |
+| `price` client sống dai | Phase 4 bắt buộc bỏ trên public create |
+| Schema `"order"` quote lệch JPA | Kiểm tra `bootRun` Phase 1 |
+| Member 4 bottleneck | DRI tự OpenAPI; chia staff menu cho M3 |
+| `run.txt` vs CRA (`npm run dev` không tồn tại) | Dùng `npm start`; sửa `run.txt` Phase 1 |
 
-## Việc team phải trả lời trước Phase 1
+---
+
+## Việc team phải trả lời trước khi mở Trello / song song Phase 2
 
 Đọc `docs/README.md` → `product.md` → `architecture.md` → `contracts.md` → file này.
 
-Trả lời bằng comment trên PR của nhánh `docs/discuss`, hoặc sửa trực tiếp các ô `[ ]` / `_điền_` rồi push lên nhánh này.
+Trả lời comment PR hoặc sửa ô `_điền_` rồi push.
 
-Không tự gán hộ người khác. Mỗi người đề xuất vai trò mình + lý do (1–2 câu).
+Không tự gán hộ. Mỗi người đề xuất vai mình + lý do 1–2 câu.
 
 ### 1. Ai là Member 1 / 2 / 3 / 4?
-
-Gán **đúng một người** mỗi vai. Một người có thể nhận 1 vai. Nếu muốn đổi phạm vi module, ghi rõ — đừng để “ai cũng own order”.
 
 | Vai | Own (tóm tắt) | Tên GitHub / tên thật | Lý do ngắn |
 |---|---|---|---|
 | Member 1 — DRI QR + Session | restaurant, table, qr, session, guest, timeout | _điền_ | _điền_ |
-| Member 2 — DRI Order + Payment | order, payment, 2 mode trả, tiền, idempotency | _điền_ | _điền_ |
-| Member 3 — DRI Customer UI | `/q/:qrToken`, menu, cart, review, pay UI | _điền_ | _điền_ |
-| Member 4 — DRI Integration + Staff | staff UI, review OpenAPI, Compose, CI, E2E | _điền_ | _điền_ |
-
-Checklist cá nhân (mỗi member đánh dấu vai mình đề xuất):
+| Member 2 — DRI Order + Payment | evolve Order trên `main`, payment, tiền | _điền_ | _điền_ |
+| Member 3 — DRI Customer UI | CRA `/q/:qrToken`, menu, cart, review | _điền_ | _điền_ |
+| Member 4 — DRI Integration + Staff | Compose, CI, staff UI, E2E | _điền_ | _điền_ |
 
 - [ ] Tôi nhận Member 1
 - [ ] Tôi nhận Member 2
@@ -175,31 +167,23 @@ Checklist cá nhân (mỗi member đánh dấu vai mình đề xuất):
 
 ### 2. Ai Product Owner (chốt ưu tiên)?
 
-PO không nhất thiết code. PO chốt: cái gì vào sprint/phase, cái gì **không** làm, khi nào DoD sản phẩm đạt.
-
 - Tên: _điền_
 - Có code không? có / không
 - [ ] Team đồng ý
 
 ### 3. Ai được merge `main`?
 
-`main` protected: PR + 1 review + CI xanh. Không push thẳng.
-
-Ai được bấm merge sau khi review xong?
-
 - [ ] Chỉ PO
-- [ ] PO + Member 4 (integration)
+- [ ] PO + Member 4
 - [ ] Bất kỳ DRI sau khi DRI module + 1 người khác đã review
 - Tên cụ thể: _điền_
 
-### 4. Khung giờ Session 1 trong tuần (UTC+7)?
-
-Session 1 = planning 20–30 phút. Chọn **một** khung cố định. Session 2–4 xếp quanh khung này.
+### 4. Khung giờ Session 1 (UTC+7)?
 
 - Ngày: _ví dụ T7_
-- Giờ bắt đầu (UTC+7): _ví dụ 20:00_
+- Giờ bắt đầu: _ví dụ 20:00_
 - Kênh: _Discord / Meet / ..._
-- [ ] Team đồng ý khung này
-- [ ] Không họp được giờ đó — đề xuất khác: _điền_
+- [ ] Team đồng ý
+- [ ] Không họp được — đề xuất: _điền_
 
-Khi 4 câu đã điền đủ, PO (hoặc người mở PR) comment `chốt` trên PR rồi mới mở Trello và bắt Phase 1.
+Khi 4 câu đủ, PO comment `chốt` trên PR rồi mới Trello + song song Phase 2. Phase 1 (Compose) có thể bắt đầu ngay vì serial, không cần đợi tên nếu PO đồng ý.

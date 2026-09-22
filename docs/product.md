@@ -2,29 +2,39 @@
 
 ## Mục tiêu
 
-Xây hệ thống order bằng QR cho quán ăn/cafe, đủ để demo E2E.
+Hệ thống order bằng QR cho quán ăn/cafe, đủ demo E2E.
 
-Khách quét QR cố định tại bàn, xem menu không login, giữ giỏ hàng local, xem lại giá/tình trạng hiện tại, rồi đặt món. Staff/Admin quản lý bàn, QR, menu, order, thanh toán, checkout.
+Khách quét QR cố định tại bàn, xem menu không login, giữ giỏ local, review giá/tình trạng **server**, rồi đặt món. Staff/Admin quản lý bàn, QR, menu, order, thanh toán, checkout.
 
-Đây là MVP học/demo của team 4 người, làm ngoài giờ. Tiêu chí thành công:
+Team 4 người, ngoài giờ. Tiêu chí thành công:
 
-> Luồng khách → backend → thanh toán → order → staff → realtime chạy ổn định trên Docker Compose.
+> Luồng khách → Spring → thanh toán → order → staff → (sau đó) realtime, chạy ổn định trên Docker Compose.
 
-Không xây platform trước khi luồng lõi chạy được.
+Không xây platform trước khi luồng lõi chạy.
+
+## Đã có trên `main` (as-built)
+
+Chỉ **Order CRUD** + Liquibase schema `order` + Swagger + Dockerfile backend + CRA hello-world.
+
+- `POST /api/v1/orders` tạo order `PENDING`, tính tổng từ item client gửi.
+- `GET /api/v1/orders/{id}`, `GET /api/v1/orders`.
+- Frontend **chưa** gọi API, **chưa** có màn QR/staff.
+
+Phần còn lại dưới đây là **đích sản phẩm**. Làm incremental trên base này.
 
 ## Diễn viên
 
 | Vai | Là ai | Làm gì |
 |---|---|---|
 | Customer / Guest | Khách tại bàn, không tài khoản | Quét QR, xem menu, giỏ local, review, order/pay |
-| Staff | Nhân viên quán | Order, đổi status, xác nhận tiền mặt, checkout, đổi availability, nhả bàn |
-| Admin | Chủ/quản lý | Tất cả quyền Staff + cấu hình quán, menu, bàn/QR, membership, force-close |
+| Staff | Nhân viên quán | Đổi status order, xác nhận tiền mặt, checkout, availability, nhả bàn |
+| Admin | Chủ/quản lý | Mọi quyền Staff + cấu hình quán, menu, bàn/QR, membership, force-close |
 
-MVP chỉ 2 role: `ADMIN`, `STAFF`. Authorization theo permission, không tách Cashier/Waiter/Manager.
+MVP 2 role: `ADMIN`, `STAFF`. Không tách Cashier/Waiter/Manager.
 
-Admin ban đầu bootstrap từ biến môi trường. Không có đăng ký, verify email, reset mật khẩu, social login, guest account.
+Admin bootstrap từ env. Không đăng ký, verify email, reset mật khẩu, social login, guest account.
 
-## Domain
+## Domain (đích)
 
 ```text
 Restaurant
@@ -37,12 +47,12 @@ Restaurant
 │   └── MenuItem
 └── DiningSession
     ├── SessionGuest
-    ├── Order
-    │   └── OrderItem
+    ├── Order            ← đã có entity trên main (thiếu session_id, status kitchen)
+    │   └── OrderItem    ← đang dùng productId + price client; đích = menu_item_id + snapshot server
     └── Payment
 ```
 
-Có thể thêm `PaymentDraft` nội bộ cho `PAY_WITH_ORDER`. Không phải tính năng khách thấy. Chỉ để Order không được tạo trước khi thanh toán thành công.
+Có thể thêm `PaymentDraft` nội bộ cho `PAY_WITH_ORDER`.
 
 ### Table lifecycle — tách khỏi session
 
@@ -51,7 +61,7 @@ AVAILABLE
 OCCUPIED
 ```
 
-Bàn có thể `OCCUPIED` trong khi session vừa `CLOSED`. Staff/Admin mới được nhả bàn.
+Bàn có thể `OCCUPIED` khi session vừa `CLOSED`. Staff/Admin mới nhả bàn.
 
 ### DiningSession lifecycle
 
@@ -62,69 +72,52 @@ CLOSED
 EXPIRED
 ```
 
-Session = một kỳ order/thanh toán, không phải “người còn ngồi ở bàn”.
-
-Một bàn tối đa **một** DiningSession đang active. Constraint phải nằm ở PostgreSQL, không chỉ check trong code.
+Session = một kỳ order/thanh toán, không phải “người còn ngồi”. Một bàn tối đa **một** session active — constraint PostgreSQL.
 
 ## Session
 
 ```text
-Quét QR
-  → resolve table
-  → tìm session ACTIVE
-      ├── có  → join
-      └── không → tạo đúng một session
+Quét QR → resolve table → tìm session ACTIVE
+  ├── có  → join
+  └── không → tạo đúng một session
 ```
 
-Máy mới quét cùng QR thì join session đang active.
+Máy mới quét cùng QR → join session đang active.
 
-Guest không login:
-
-```text
-anonymous_device_id → SessionGuest → DiningSession
-```
-
-Token khách: scoped theo session, không có quyền staff, hết hạn/thu hồi khi session đóng, dùng lại được khi reload.
+Guest: `anonymous_device_id → SessionGuest → DiningSession`. Token khách scoped theo session, không quyền staff.
 
 ### Timeout
 
-Trước khi có order đã confirm:
+Trước khi có order confirm:
 
 ```text
 không đụng giỏ  → 15 phút → EXPIRED
 có activity giỏ → 1 giờ   → EXPIRED
 ```
 
-Sau khi đã có ít nhất một order confirm: **không** tự hết hạn. Đóng bằng checkout, thanh toán, hoặc admin force-close.
+Sau ≥1 order confirm: **không** tự hết hạn. Đóng bằng checkout, thanh toán, hoặc admin force-close.
 
-Không lấy trạng thái WebSocket làm định nghĩa session còn sống.
+Không lấy WebSocket làm định nghĩa session còn sống.
 
 ## Luồng khách
 
-Route: `/q/:qrToken`
+Route đích: `/q/:qrToken` (CRA, chưa có router trên `main`).
 
 ```text
-Scan QR
-  → join/create session
-  → Menu
-  → Local cart (mỗi guest một giỏ)
-  → Review
+Scan QR → join/create session → Menu → Local cart → Review
   → Backend validate (item, availability, qty, giá hiện tại, session)
-  → Confirm
-  → Payment flow theo mode quán
+  → Confirm → Payment theo mode quán
 ```
 
-Client không được tin cho tiền. Review phải hiện số Spring trả về.
+Client không tin cho tiền. Review hiện số Spring trả. Giỏ không sync realtime, không ghi từng lần sửa vào Postgres.
 
-Giỏ **không** sync realtime, **không** ghi từng lần sửa vào Postgres.
+Món hết vẫn hiện, `Out of stock`, không add.
 
-Món hết vẫn hiện, gắn `Out of stock`, không cho add vào giỏ.
-
-Menu MVP: category (name, display_order, active) + item (name, description, price, image, available, display_order). Không modifier, variant, combo, promotion, flash sale, scheduled price.
+Menu MVP: category + item (name, description, price, image, available, display_order). Không modifier/combo/promotion.
 
 ## Luồng staff
 
-Cùng một SPA:
+Cùng một CRA app, thêm router:
 
 ```text
 /staff/login
@@ -133,85 +126,73 @@ Cùng một SPA:
 /staff/menu
 ```
 
-Dashboard: Active Orders, Checkout Requests, Tables. Realtime: toast + optional sound. Không notification center.
+Dashboard: Active Orders, Checkout Requests, Tables. Realtime (khi có STOMP): toast + optional sound.
 
 ## Thanh toán
 
 Tiền: `BigDecimal` / `NUMERIC`. Currency: `VND`. MVP: tax = 0, service = 0, discount = 0, total = subtotal.
 
-Khách **không** tự đánh dấu tiền mặt đã trả. Chỉ Staff confirm cash.
+Khách **không** tự đánh dấu cash. Chỉ Staff confirm.
 
 ### PAY_AT_END — làm trước
 
-Order → ăn → order tiếp → checkout → trả.
-
 ```text
 Menu → Cart → Review → Order → thêm order…
-  → Request Checkout
-  → Session = CHECKOUT_REQUESTED (không nhận order mới)
-  → Staff xử lý payment
-  → SUCCESS → Session CLOSED → Table AVAILABLE
+  → Request Checkout → session CHECKOUT_REQUESTED (không nhận order mới)
+  → Staff payment SUCCESS → session CLOSED → table AVAILABLE
 ```
 
-Session là ranh giới hóa đơn. Tổng = mọi order đã confirm trong session.
+Tổng = mọi order đã confirm trong session.
 
 ### PAY_WITH_ORDER — làm sau
 
-Order → trả → nhận món → session kết thúc.
-
 ```text
-Menu → Cart → Review → submit payment
-  → lock session, chỉ tính draft đã gửi server (giỏ local chưa submit không vào bill)
-  → validate lại, tính tổng
-  → payment SUCCESS → materialize Order → Session CLOSED
+preview → submit payment-draft → lock session
+  → staff confirm → materialize Order → session CLOSED
 ```
 
-Bàn có thể **vẫn OCCUPIED**. Staff nhả bàn sau. Quét QR lại → session mới. Không gắn activity mới vào kỳ đã trả.
+Bàn có thể vẫn `OCCUPIED`. Quét QR lại → session mới.
 
 ## Order
 
-Order gần như immutable sau khi tạo. Không sửa/hủy trong MVP. Order thêm = record Order mới trong cùng session (khi mode cho phép).
+Gần như immutable sau tạo. Không sửa/hủy trong MVP. Order thêm = record mới cùng session.
+
+Đích:
 
 ```text
 OrderItem: menu_item_id, quantity, unit_price_snapshot, note
+unit_price_snapshot = server. Client không gửi giá.
+status: PENDING → PREPARING → READY → SERVED
 ```
 
-`unit_price_snapshot` luôn do server. Client không gửi giá.
-
-Status:
-
-```text
-PENDING → PREPARING → READY → SERVED
-```
+As-built `main`: `status` là `VARCHAR` (`PENDING` lúc create). Chưa có kitchen flow, chưa có `note`, `price` lấy từ request.
 
 Không `CANCELLED` trong MVP.
 
 ## Definition of Done — sản phẩm
 
-MVP xong **chỉ khi** kịch bản này chạy thật (2 máy khách + 1 staff, Postgres, Redis, WebSocket, không mock nghiệp vụ):
+MVP xong **chỉ khi** chạy thật (2 máy khách + 1 staff, Postgres, **không mock nghiệp vụ**). Redis + WebSocket là điều kiện **khi phase realtime xong**, không chặn DoD phần order/session nếu team chưa tới phase đó.
 
 ```text
 ADMIN tạo quán/bàn/menu, generate QR
 
-CUSTOMER A quét QR, join, thêm món, review giá server, chạy order/payment
+CUSTOMER A quét QR, join, thêm món, review giá server, order/payment
 
-CUSTOMER B quét cùng QR, cùng session, giỏ độc lập, chạy order/payment
+CUSTOMER B quét cùng QR, cùng session, giỏ độc lập
 
-STAFF nhận realtime, đổi status, thấy note, confirm cash khi cần
+STAFF đổi status, thấy note, confirm cash
 
-PAY_AT_END: order nhiều lần → checkout → lock → staff confirm
-            → session CLOSED → bàn AVAILABLE
+PAY_AT_END: nhiều order → checkout → lock → staff confirm → CLOSED → AVAILABLE
 
-PAY_WITH_ORDER: review → payment → order được tạo → session CLOSED
-                → bàn có thể OCCUPIED → staff nhả bàn sau
+PAY_WITH_ORDER: review → pay → materialize → CLOSED (bàn có thể OCCUPIED)
 
-Khách mới quét QR sau khi session cũ CLOSED → session mới
+Khách mới sau CLOSED → session mới
 ```
 
 ## Ngoài phạm vi
 
-Không làm trong MVP:
+Guest account, loyalty, social login, reset password, split bill, sửa/hủy order, modifier/combo, promotion, thuế/VAT, service charge, đa tiền tệ, cổng thanh toán online, POS, app bếp, kho, hóa đơn điện tử, lịch staff, analytics, QR động, geolocation, notification center, push.
 
-Guest account, loyalty, nickname, social login, reset password, split bill, sửa/hủy order, modifier/variant/combo, giảm giá/promotion, thuế/VAT, service charge, đa tiền tệ, cổng thanh toán online, POS, app bếp, kho, hóa đơn, lịch staff, analytics, QR động, geolocation, notification center, push.
+Không: microservice, event sourcing, queue, distributed lock, K8s, feature-flag platform, ELK, Prometheus, tracing phân tán.
 
-Không làm: microservice, event sourcing, queue, distributed lock, K8s, feature-flag platform, ELK, Prometheus, tracing phân tán.
+`cloud.txt` (Vercel / Render / Neon / Auth0) = ghi chú deploy **sau MVP local**. Không phải stack Phase 1.

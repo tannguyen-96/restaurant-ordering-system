@@ -1,102 +1,106 @@
-# Hợp đồng FE/BE — REST + STOMP
+# Hợp đồng FE/BE
 
-OpenAPI trên Spring là hợp đồng. Màn hình user-facing không ship nếu thiếu endpoint + example trong file này / Swagger.
+OpenAPI trên Spring (`/swagger-ui.html`) là hợp đồng. Tách rõ **đã ship trên `main`** và **sẽ thêm**.
 
-Tên path có thể chỉnh khi design chi tiết, **ranh giới trách nhiệm không đổi**.
+Frontend logic dùng `code` (khi có error envelope), không nhánh if theo `message`.
 
-DRI module viết contract của module mình. Member 4 review/merge, không viết hộ toàn bộ.
+---
 
-Frontend logic dùng `code`, không dùng `message`.
+## Đã ship — `/api/v1/orders`
 
-## REST — public / khách
+Base: `http://localhost:8080`  
+Tag Swagger: `Order Controller`
+
+### `POST /api/v1/orders` → 201
+
+Tạo order `PENDING`. **As-built tin giá client** — lệch rule sản phẩm. Giữ chữ ký đến khi có Menu; lúc đó bỏ `price` khỏi request, server snapshot từ `menu_items`.
+
+Request:
+
+```json
+{
+  "items": [
+    { "productId": "PROD-001", "quantity": 2, "price": 150.00 }
+  ]
+}
+```
+
+Validation:
+
+- `items` `@NotEmpty`
+- `productId` `@NotBlank`
+- `quantity` `@Min(1)`
+- `price` `@NotNull`
+
+Response `OrderResponse`:
+
+```json
+{
+  "id": 1,
+  "orderNumber": "uuid",
+  "status": "PENDING",
+  "totalAmount": 300.00,
+  "createdAt": "2026-09-22T15:00:00"
+}
+```
+
+`totalAmount` = Σ `price * quantity` trong `OrderServiceImpl`.  
+`orderNumber` = `UUID.randomUUID()`.  
+Response **không** trả danh sách item.
+
+### `GET /api/v1/orders/{id}` → 200 | 404
+
+404: `RuntimeException` → body string `"Order not found with ID: {id}"` (chưa envelope `code`).
+
+### `GET /api/v1/orders` → 200
+
+`List<OrderResponse>`.
+
+### Lỗi as-built
+
+Validation (`@Valid`): **400** body `Map<field, message>` — không có `code` / `requestId`.
+
+```json
+{ "items": "Đơn hàng phải có ít nhất 1 sản phẩm" }
+```
+
+`RuntimeException`: **404** body **string**, không JSON.
+
+Khi thêm API public/staff: chuyển dần sang envelope dưới đây. Không phá 400 map hiện tại trong cùng PR trừ khi DRI Order chủ động.
+
+---
+
+## Sẽ thêm — public / khách
+
+Chưa implement. Path có thể chỉnh; ranh giới không đổi.
 
 ```text
 GET    /api/public/qr/{qrToken}
 POST   /api/public/sessions/join
 GET    /api/public/menu
 POST   /api/public/order-previews
-POST   /api/public/orders              # PAY_AT_END: tạo order ngay
-POST   /api/public/checkout-requests   # PAY_AT_END: khóa session, chờ staff
-POST   /api/public/payment-drafts      # PAY_WITH_ORDER: nộp giỏ để vào bill
-POST   /api/public/payments            # khởi tạo payment (CASH → PENDING)
+POST   /api/public/orders              # PAY_AT_END — khác /api/v1/orders hiện tại
+POST   /api/public/checkout-requests
+POST   /api/public/payment-drafts      # PAY_WITH_ORDER
+POST   /api/public/payments
 ```
 
-### QR join
+Khi làm `POST /api/public/orders`: **không** nhận `price`. Snapshot `unit_price_snapshot` từ menu. Có thể deprecate `/api/v1/orders` hoặc để nội bộ/dev.
 
-Request:
+### Join (đích)
 
-```json
-{ "qrToken": "7f83a1..." }
-```
+Request: `{ "qrToken": "..." }`  
+Response gồm restaurant, table, session, sessionGuest, sessionToken.
 
-Response:
+`GET .../qr/{qrToken}` chỉ resolve. `POST .../sessions/join` mới join/tạo (idempotent theo table + device).
 
-```json
-{
-  "restaurant": { "id": "restaurant-01", "name": "Demo Restaurant", "currency": "VND" },
-  "table": { "id": "table-05", "name": "05" },
-  "session": { "id": "session-101", "status": "ACTIVE" },
-  "sessionGuest": { "id": "guest-abc" },
-  "sessionToken": "signed-token"
-}
-```
+### Preview (đích)
 
-`GET /api/public/qr/{qrToken}` chỉ resolve quán/bàn/session hiện có. `POST .../sessions/join` mới join hoặc tạo (idempotent theo table + device).
+Client gửi `menuItemId` + `quantity` + `note`. Server trả `unitPrice` / `lineTotal` / `total`. UI hiện số này trước confirm.
 
-### Order preview
+---
 
-Request:
-
-```json
-{
-  "sessionGuestId": "guest-abc",
-  "items": [
-    { "menuItemId": "coffee-01", "quantity": 2, "note": "Ít đá" }
-  ]
-}
-```
-
-Response:
-
-```json
-{
-  "sessionId": "session-101",
-  "items": [
-    {
-      "menuItemId": "coffee-01",
-      "name": "Cà phê sữa",
-      "quantity": 2,
-      "unitPrice": 35000,
-      "lineTotal": 70000,
-      "note": "Ít đá"
-    }
-  ],
-  "subtotal": 70000,
-  "total": 70000,
-  "currency": "VND",
-  "expiresAt": "2026-09-15T16:00:00Z"
-}
-```
-
-UI phải hiện số này trước confirm/pay. Client không gửi `unitPrice`.
-
-### PAY_AT_END — tạo order
-
-Sau preview: `POST /api/public/orders` (kèm idempotency key). Server snapshot giá, tạo Order `PENDING`.
-
-Checkout: `POST /api/public/checkout-requests` `{ "sessionId": "session-101" }` → session `CHECKOUT_REQUESTED`, tạo Payment PENDING = tổng order đã confirm. Không nhận order mới.
-
-### PAY_WITH_ORDER — draft rồi trả
-
-Giỏ chưa submit không vào bill.
-
-```text
-preview → POST payment-drafts → lock session
-  → tính tổng draft đã nhận → POST payments (CASH = PENDING)
-  → staff confirm → materialize Order → session CLOSED
-```
-
-## REST — staff / admin
+## Sẽ thêm — staff / admin
 
 ```text
 POST   /api/staff/auth/login
@@ -110,12 +114,8 @@ PATCH  /api/staff/tables/{tableId}
 POST   /api/staff/tables/{tableId}/qr/regenerate
 POST   /api/staff/tables/{tableId}/release
 
-GET    /api/staff/menu/categories
-POST   /api/staff/menu/categories
-PATCH  /api/staff/menu/categories/{categoryId}
-GET    /api/staff/menu/items
-POST   /api/staff/menu/items
-PATCH  /api/staff/menu/items/{itemId}
+GET/POST/PATCH /api/staff/menu/categories
+GET/POST/PATCH /api/staff/menu/items
 POST   /api/staff/menu/items/{itemId}/availability
 POST   /api/staff/menu/items/{itemId}/image
 
@@ -123,47 +123,11 @@ POST   /api/staff/payments/{paymentId}/confirm
 POST   /api/staff/sessions/{sessionId}/force-close
 ```
 
-Login: username/email + password → JWT. Không body `paymentId` trùng path.
+Login → JWT. Confirm cash `{ "method": "CASH" }`. Mọi chuyển trạng thái liên quan (order materialize, session close, table) **một transaction**.
 
-Staff confirm cash:
+---
 
-```json
-{ "method": "CASH" }
-```
-
-Response:
-
-```json
-{
-  "paymentId": "payment-88",
-  "status": "SUCCESS",
-  "amount": 120000,
-  "currency": "VND"
-}
-```
-
-Mọi chuyển trạng thái liên quan (order materialize, session close, table) nằm trong **một transaction**.
-
-Khởi tạo payment (public hoặc sau checkout):
-
-```json
-{
-  "sessionId": "session-101",
-  "paymentMode": "PAY_AT_END",
-  "method": "CASH"
-}
-```
-
-```json
-{
-  "paymentId": "payment-88",
-  "status": "PENDING",
-  "amount": 120000,
-  "currency": "VND"
-}
-```
-
-## Lỗi thống nhất
+## Envelope lỗi (đích, API mới)
 
 ```json
 {
@@ -174,65 +138,44 @@ Khởi tạo payment (public hoặc sau checkout):
 }
 ```
 
-Codes:
+Codes: `SESSION_EXPIRED`, `SESSION_LOCKED`, `MENU_ITEM_UNAVAILABLE`, `ORDER_VALIDATION_FAILED`, `PAYMENT_FAILED`, `PAYMENT_ALREADY_PROCESSED`, `FORBIDDEN`, `NOT_FOUND`.
 
-```text
-SESSION_EXPIRED
-SESSION_LOCKED
-MENU_ITEM_UNAVAILABLE
-ORDER_VALIDATION_FAILED
-PAYMENT_FAILED
-PAYMENT_ALREADY_PROCESSED
-FORBIDDEN
-NOT_FOUND
-```
+---
 
-Có thể thêm code; không dùng `message` làm nhánh if.
+## STOMP (chưa có — phase realtime)
 
-## STOMP
+Không emit event cho sửa giỏ.
 
-Thông báo, không phải truth. Không emit event cho từng lần sửa giỏ.
-
-Đề xuất topic (chốt cùng OpenAPI trước khi code FE realtime):
+Topic đề xuất:
 
 ```text
 /topic/sessions/{sessionId}
 /topic/restaurants/{restaurantId}/orders
 ```
 
-Event bắt buộc:
+Event: `ORDER_CREATED`, `ORDER_STATUS_CHANGED`, `CHECKOUT_REQUESTED`, `PAYMENT_UPDATED`, `SESSION_UPDATED`.
 
-```text
-ORDER_CREATED
-ORDER_STATUS_CHANGED
-CHECKOUT_REQUESTED
-PAYMENT_UPDATED
-SESSION_UPDATED
-```
+Disconnect: WS drop → reconnect → REST resync → resume STOMP.
 
-```json
-{
-  "eventId": "evt-1001",
-  "eventType": "ORDER_STATUS_CHANGED",
-  "occurredAt": "2026-09-15T15:30:00Z",
-  "sessionId": "session-101",
-  "orderId": "order-501",
-  "payload": { "status": "PREPARING" }
-}
-```
+---
 
-Disconnect:
+## Idempotency (chưa có)
 
-```text
-WS drop → auto reconnect → REST resync → resume STOMP
-```
+Header `Idempotency-Key` cho join, preview-confirm, create order, create/confirm payment, checkout.
 
-## Idempotency
+`POST /api/v1/orders` hiện **không** idempotent.
 
-Header đề xuất: `Idempotency-Key` cho join, preview-confirm, create order, create payment, confirm payment, checkout.
+---
 
-Retry cùng key không nhân order/payment.
+## Mapping as-built → đích Order
 
-## Việc còn chốt lúc Phase 5 (không chặn Phase 1–4)
+| As-built | Đích |
+|---|---|
+| `productId` (string tự do) | `menuItemId` FK menu |
+| `price` từ client | `unit_price_snapshot` từ server |
+| không `note` | `note` optional |
+| `status` = `PENDING` string | enum kitchen `PENDING→PREPARING→READY→SERVED` |
+| không `sessionId` | bắt buộc thuộc DiningSession |
+| response không có items | response có line items khi FE cần |
 
-DRI Order/Payment quyết định shape cuối của `payment-drafts` vs `orders` khi implement PAY_WITH_ORDER. Phase 1–4 chỉ cần join, menu, preview.
+DRI Order quyết định: evolve entity `Order` hiện có (thêm cột Liquibase `002-`) chứ không tạo bảng song song.
