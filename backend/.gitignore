@@ -1,6 +1,9 @@
 HELP.md
 .gradle
+target/
 build/
+out/
+*.class
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -35,3 +38,11 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Local secrets ###
+application-local.yml
+application-local.yaml
+.env
+
+# Logs
+*.log

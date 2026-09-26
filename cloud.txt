@@ -1,4 +1,3 @@
-React → Vercel
-Spring Boot → Render or Google Cloud Run
-PostgreSQL → Neon
-Authen -> auth0
+React → Vercel https://restaurant-ordering-system-ten-rho.vercel.app
+Spring Boot → Render
+PostgreSQL → Supabase

@@ -1,3 +1,9 @@
 databaseChangeLog:
   - include:
       file: db/changelog/changes/001-create-schema-and-tables.yaml
+  - include:
+      file: db/changelog/changes/002-create-branches-tables.yaml
+  - include:
+      file: db/changelog/changes/003-change-schema-name-due-to-contain-keyword.yaml
+  - include:
+      file: db/changelog/changes/004-add-new-column-to-branch.yaml

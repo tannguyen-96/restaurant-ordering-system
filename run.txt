@@ -1,6 +1,7 @@
 backend
 # Run the default application
 ./gradlew bootRun
+./gradlew local # Run with profile local
 
 # Run the application with a specific profile (e.g., local)
 ./gradlew bootRun --args='--spring.profiles.active=local'
@@ -9,7 +10,7 @@ backend
 http://localhost:8080/swagger-ui.html
 
 frontend
-npm run dev (node24)
+npm start (node24)
 localhost:3000
 
 daisyui theme
