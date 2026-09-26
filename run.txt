@@ -11,7 +11,4 @@ http://localhost:8080/swagger-ui.html
 
 frontend
 npm start (node24)
-localhost:3000
-
-daisyui theme
-https://daisyui.com/docs/themes/
+http://localhost:3000
