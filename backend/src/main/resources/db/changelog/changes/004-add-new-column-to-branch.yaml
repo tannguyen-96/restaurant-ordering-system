@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-branch-status-and-domain-columns
+      author: system
+      changes:
+        - addColumn:
+            schemaName: "restaurant_system"
+            tableName: "branches"
+            columns:
+              - column:
+                  name: "status"
+                  type: "varchar(50)"
+                  defaultValue: "active"
+        - addColumn:
+            schemaName: "restaurant_system"
+            tableName: "branches"
+            columns:
+              - column:
+                  name: "domain"
+                  type: "varchar(255)"
+                  defaultValue: "https://restaurant-ordering-system-ten-rho.vercel.app/"
+
+  - changeSet:
+      id: 004-backfill-branch-status-column
+      author: system
+      changes:
+        - sql:
+            sql: UPDATE restaurant_system.branches SET status = 'active', domain = 'https://restaurant-ordering-system-ten-rho.vercel.app/'
+
+  - changeSet:
+      id: 004-add-not-null-constraint
+      author: system
+      changes:
+        - addNotNullConstraint:
+            schemaName: "restaurant_system"
+            tableName: "branches"
+            columnName: "status"
+            columnDataType: "varchar(50)"
+        - addNotNullConstraint:
+            schemaName: "restaurant_system"
+            tableName: "branches"
+            columnName: "domain"
+            columnDataType: "varchar(255)"

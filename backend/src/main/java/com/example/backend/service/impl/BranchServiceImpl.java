@@ -17,6 +17,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class BranchServiceImpl implements BranchService {
+
     private final BranchRepository branchRepository;
 
     // GET all branches
@@ -45,6 +46,8 @@ public class BranchServiceImpl implements BranchService {
         Branch branch = Branch.builder()
                 .name(request.getName())
                 .address(request.getAddress())
+                .status(request.getStatus())
+                .domain(request.getDomain())
                 .build();
 
         Branch savedBranch = branchRepository.save(branch);
@@ -62,6 +65,8 @@ public class BranchServiceImpl implements BranchService {
 
         branch.setName(request.getName());
         branch.setAddress(request.getAddress());
+        branch.setStatus(defaultValue(request.getStatus(), branch.getStatus()));
+        branch.setDomain(defaultValue(request.getDomain(), branch.getDomain()));
         branch.setUpdatedAt(LocalDateTime.now());
         branch.setUpdatedBy("system");
 
@@ -86,8 +91,14 @@ public class BranchServiceImpl implements BranchService {
                 .id(branch.getId())
                 .name(branch.getName())
                 .address(branch.getAddress())
+                .status(branch.getStatus())
+                .domain(branch.getDomain())
                 .createdAt(branch.getCreatedAt().toString())
                 .updatedAt(branch.getUpdatedAt().toString())
                 .build();
+    }
+
+    private String defaultValue(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 }
