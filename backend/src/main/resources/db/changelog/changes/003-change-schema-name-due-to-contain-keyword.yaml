@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-rename-schema
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = 'order'
+      changes:
+        - sql:
+            sql: ALTER SCHEMA "order" RENAME TO restaurant_system;
+      rollback:
+        - sql:
+            sql: ALTER SCHEMA restaurant_system RENAME TO "order";

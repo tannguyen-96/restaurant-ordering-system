@@ -30,9 +30,18 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.testcontainers:junit-jupiter:1.20.1'
+	testImplementation 'org.testcontainers:postgresql:1.20.1'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	implementation 'org.springframework.boot:spring-boot-starter-liquibase'
 	testImplementation 'org.springframework.boot:spring-boot-starter-liquibase-test'
+}
+
+tasks.register("local", org.springframework.boot.gradle.tasks.run.BootRun) {
+    group = "application"
+    mainClass = "com.example.backend.BackendApplication"
+    classpath = sourceSets.main.runtimeClasspath
+    systemProperty "spring.profiles.active", "local"
 }
 
 tasks.named('test') {
