@@ -1,14 +1,24 @@
-# --- Stage 1: Build ---
-FROM eclipse-temurin:21-jdk-alpine AS builder
+# ---- Build stage ----
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
-COPY . .
-RUN chmod +x ./gradlew
-RUN ./gradlew bootJar -x test
 
-# --- Stage 2: Runtime ---
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle .
+COPY settings.gradle .
+
+# Cache dependencies separately from source for faster rebuilds
+RUN chmod +x gradlew
+RUN ./gradlew dependencies --no-daemon || true
+
+COPY src src
+RUN ./gradlew clean bootJar --no-daemon
+
+# ---- Run stage ----
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
-ENV JAVA_TOOL_OPTIONS="-Xmx300m -Xms150m"
+
+COPY --from=build /app/build/libs/*.jar app.jar
+
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
