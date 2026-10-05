@@ -1,17 +1,15 @@
-import React from 'react'
 import { Container, Row, Col } from 'react-bootstrap'
-import { useApp } from '../context/AppContext'
 
-export default function Footer() {
-  const { siteName } = useApp()
-
+const Footer = () => {
   return (
     <Container fluid as="footer" className="py-2">
       <Row>
         <Col>
-            <span className="text-left font-small text-muted">&copy; {new Date().getFullYear()} {siteName}</span>
+            <span className="text-left font-small text-muted">&copy; {new Date().getFullYear()}</span>
         </Col>
       </Row>
     </Container>
   )
 }
+
+export default Footer;

@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-seed-admin-user-and-policies
+      author: system
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO restaurant_system.users
+                (id, username, email, password_hash, status, created_by, updated_by)
+              VALUES
+                ('00000000-0000-0000-0000-000000000001', 'admin', 'admin@example.com',
+                 'admin', 'active', 'system', 'system');
+
+              INSERT INTO restaurant_system.roles
+                (id, name, description, status, created_by, updated_by)
+              VALUES
+                ('00000000-0000-0000-0000-000000000002', 'admin', 'Administrator role', 'active', 'system', 'system');
+
+              INSERT INTO restaurant_system.policies
+                (id, name, service, action, created_by, updated_by)
+              VALUES
+                ('00000000-0000-0000-0000-000000000011', 'branch:get', 'branch', 'get', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000012', 'branch:list', 'branch', 'list', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000013', 'branch:post', 'branch', 'post', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000014', 'branch:put', 'branch', 'put', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000015', 'branch:delete', 'branch', 'delete', 'system', 'system');
+
+              INSERT INTO restaurant_system.user_role
+                (id, user_id, role_id, created_by, updated_by)
+              VALUES
+                ('00000000-0000-0000-0000-000000000003',
+                 '00000000-0000-0000-0000-000000000001',
+                 '00000000-0000-0000-0000-000000000002',
+                 'system', 'system');
+
+              INSERT INTO restaurant_system.user_policy
+                (id, user_id, policy_id, created_by, updated_by)
+              VALUES
+                ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000012', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000013', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000024', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000014', 'system', 'system'),
+                ('00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000015', 'system', 'system');

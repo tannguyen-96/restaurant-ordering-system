@@ -1,0 +1,76 @@
+databaseChangeLog:
+  - changeSet:
+      id: 011-create-role-policy
+      author: system
+      changes:
+        - createTable:
+            schemaName: "restaurant_system"
+            tableName: role_policy
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: role_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_role_policy_role
+                    references: restaurant_system.roles(id)
+              - column:
+                  name: policy_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_role_policy_policy
+                    references: restaurant_system.policies(id)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: delete_date
+                  type: timestamp
+        - addUniqueConstraint:
+            schemaName: "restaurant_system"
+            tableName: role_policy
+            columnNames: role_id, policy_id
+            constraintName: uq_role_policy_role_policy
+        - createIndex:
+            schemaName: "restaurant_system"
+            tableName: role_policy
+            indexName: idx_role_policy_role_id
+            columns:
+              - column:
+                  name: role_id
+        - createIndex:
+            schemaName: "restaurant_system"
+            tableName: role_policy
+            indexName: idx_role_policy_policy_id
+            columns:
+              - column:
+                  name: policy_id
