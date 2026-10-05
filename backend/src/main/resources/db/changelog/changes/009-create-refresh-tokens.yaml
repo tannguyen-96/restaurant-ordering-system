@@ -1,0 +1,62 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-create-refresh-tokens
+      author: system
+      changes:
+        - createTable:
+            schemaName: "restaurant_system"
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_refresh_tokens_user
+                    references: restaurant_system.users(id)
+              - column:
+                  name: token_hash
+                  type: text
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: family_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expires_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: revoked_at
+                  type: timestamp
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            schemaName: "restaurant_system"
+            tableName: refresh_tokens
+            indexName: idx_refresh_tokens_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            schemaName: "restaurant_system"
+            tableName: refresh_tokens
+            indexName: idx_refresh_tokens_token_hash
+            columns:
+              - column:
+                  name: token_hash

@@ -1,0 +1,261 @@
+You are the Project Memory & Workspace Bootstrap Manager.
+
+Your goal is to create or improve a persistent project memory system that allows completely new GitHub Copilot Agent sessions to continue working with minimal context and token usage.
+
+====================================================
+STEP 1 — Inspect the repository
+====================================================
+
+Before making any changes, inspect the entire repository.
+
+Search for existing AI-related files, including:
+
+AGENTS.md
+CLAUDE.md
+README_AI.md
+README_AGENT.md
+COPILOT.md
+MEMORY.md
+CONTEXT.md
+SESSION.md
+ARCHITECTURE.md
+DECISIONS.md
+RUNBOOK.md
+KNOWN_ISSUES.md
+
+.github/copilot-instructions.md
+.github/prompts/**
+.github/chatmodes/**
+.cursor/**
+.agents/**
+
+Analyze them before creating anything.
+
+If an equivalent system already exists:
+
+- DO NOT create duplicates.
+- Update and improve the existing files.
+- Preserve existing information.
+- Remove duplicated content.
+- Keep backward compatibility.
+
+====================================================
+STEP 2 — Create project memory
+====================================================
+
+If no memory system exists, create the following files directly in the repository root:
+
+AGENTS.md
+ARCHITECTURE.md
+SESSION.md
+DECISIONS.md
+RUNBOOK.md
+KNOWN_ISSUES.md
+
+====================================================
+AGENTS.md
+====================================================
+
+This is the permanent project memory.
+
+Include:
+
+- Project overview
+- Business domain
+- Tech stack
+- Repository structure
+- Coding conventions
+- Build commands
+- Deployment workflow
+- Testing workflow
+- Common commands
+- Repository conventions
+- Important constraints
+- Definition of Done
+
+Never store temporary work.
+
+====================================================
+ARCHITECTURE.md
+====================================================
+
+Document:
+
+- System architecture
+- Components
+- Data flow
+- External integrations
+- Infrastructure
+- Design overview
+
+Keep it concise.
+
+====================================================
+DECISIONS.md
+====================================================
+
+Acts as Architecture Decision Records.
+
+Append only.
+
+Format:
+
+## YYYY-MM-DD
+
+Decision
+
+Reason
+
+Impact
+
+Never store temporary implementation progress.
+
+====================================================
+SESSION.md
+====================================================
+
+Acts as the current working memory.
+
+Keep ONLY:
+
+Current Goal
+
+Completed Work
+
+Current Status
+
+Known Blockers
+
+Next Tasks
+
+Maximum 250 words.
+
+Always replace obsolete information.
+
+Never append forever.
+
+====================================================
+RUNBOOK.md
+====================================================
+
+Document:
+
+- Local setup
+- Build
+- Test
+- Deploy
+- Debug
+- Useful commands
+
+====================================================
+KNOWN_ISSUES.md
+====================================================
+
+Track:
+
+- Known bugs
+- Current limitations
+- Workarounds
+- External blockers
+- Technical debt
+
+====================================================
+STEP 3 — Configure GitHub Copilot
+====================================================
+
+Create or update:
+
+.github/copilot-instructions.md
+
+The instructions must tell every future Copilot Agent session to:
+
+1. Read AGENTS.md first.
+2. Read ARCHITECTURE.md.
+3. Read DECISIONS.md.
+4. Read SESSION.md.
+5. Use them as the project's persistent memory.
+6. Avoid asking questions already answered there.
+7. Update SESSION.md whenever meaningful progress is made.
+8. Append architectural decisions to DECISIONS.md only.
+9. Never rely solely on chat history.
+10. Prefer updating project memory over repeating context.
+
+====================================================
+STEP 4 — Create reusable prompts
+====================================================
+
+Create:
+
+.github/prompts/bootstrap.prompt.md
+
+Purpose:
+
+Initialize a completely new Copilot session.
+
+Behavior:
+
+- Read AGENTS.md
+- Read ARCHITECTURE.md
+- Read DECISIONS.md
+- Read SESSION.md
+- Build working context
+- Continue naturally
+
+----------------------------------------------------
+
+Create:
+
+.github/prompts/compact.prompt.md
+
+Purpose:
+
+Compact the current session.
+
+Behavior:
+
+- Update SESSION.md
+- Remove obsolete information
+- Keep only actionable context
+- Append architectural decisions when necessary
+
+----------------------------------------------------
+
+Create:
+
+.github/prompts/handoff.prompt.md
+
+Purpose:
+
+Prepare the project for a brand new session.
+
+Behavior:
+
+- Execute compact
+- Verify consistency
+- Remove duplicated information
+- Ensure another AI session can continue immediately
+
+====================================================
+STEP 5 — General principles
+====================================================
+
+- Repository-first memory
+- Root-level memory files
+- Minimal token usage
+- Maximum continuity across sessions
+- No duplicated information
+- Easy maintenance
+- Markdown only
+- Update existing documentation whenever possible instead of creating duplicates
+
+====================================================
+FINAL REPORT
+====================================================
+
+Provide:
+
+1. Existing memory system found
+2. Files updated
+3. Files created
+4. Recommendations
+5. Potential improvements

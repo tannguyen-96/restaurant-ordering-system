@@ -1,0 +1,200 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-products
+      author: system
+      changes:
+        - createTable:
+            schemaName: "restaurant_system"
+            tableName: products
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: type
+                  type: varchar(100)
+              - column:
+                  name: status
+                  type: varchar(50)
+                  defaultValue: active
+                  constraints:
+                    nullable: false
+              - column:
+                  name: image
+                  type: varchar(1024)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: delete_date
+                  type: timestamp
+
+  - changeSet:
+      id: 005-create-menu-table
+      author: system
+      changes:
+        - createTable:
+            schemaName: "restaurant_system"
+            tableName: menus
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: status
+                  type: varchar(50)
+                  defaultValue: active
+                  constraints:
+                    nullable: false
+              - column:
+                  name: branch_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: delete_date
+                  type: timestamp
+  
+  - changeSet:
+      id: 005-create-menu-product
+      author: system
+      changes:
+        - createTable:
+            schemaName: "restaurant_system"
+            tableName: menu_product
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  defaultValueComputed: gen_random_uuid()
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: menu_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price
+                  type: numeric(10,2)
+                  constraints:
+                    nullable: false
+                    check: price >= 0
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_by
+                  type: varchar(255)
+                  defaultValue: system
+                  constraints:
+                    nullable: false
+              - column:
+                  name: delete_date
+                  type: timestamp
+        - addForeignKeyConstraint:
+            baseTableSchemaName: "restaurant_system"
+            baseTableName: menu_product
+            baseColumnNames: product_id
+            referencedTableSchemaName: "restaurant_system"
+            referencedTableName: products
+            referencedColumnNames: id
+            constraintName: fk_menu_product_product
+        - addForeignKeyConstraint:
+            baseTableSchemaName: "restaurant_system"
+            baseTableName: menu_product
+            baseColumnNames: menu_id
+            referencedTableSchemaName: "restaurant_system"
+            referencedTableName: menus
+            referencedColumnNames: id
+            constraintName: fk_menu_product_menu

@@ -1,8 +1,6 @@
 package com.example.backend.model;
 import java.util.UUID;
 import java.time.LocalDateTime;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.PreRemove;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;

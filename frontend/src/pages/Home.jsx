@@ -1,16 +1,15 @@
-import React from 'react'
-import { useApp } from '../context/AppContext'
 import { Col, Container, Row } from 'react-bootstrap'
 import QRCode from 'react-qr-code'
-export default function Home() {
-  const { siteName } = useApp()
+
+const Home = () => {
   const domain = 'https://restaurant-ordering-system-ten-rho.vercel.app/'
+
   return (
     <>
       <Container>
         <Row>
           <Col className="text-center">
-            Home Page {siteName}
+            Home Page
           </Col>
         </Row>
         <Row className="mt-3">
@@ -26,3 +25,5 @@ export default function Home() {
     </>
   )
 }
+
+export default Home

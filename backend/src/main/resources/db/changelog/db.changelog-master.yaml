@@ -7,3 +7,17 @@ databaseChangeLog:
       file: db/changelog/changes/003-change-schema-name-due-to-contain-keyword.yaml
   - include:
       file: db/changelog/changes/004-add-new-column-to-branch.yaml
+  - include:
+      file: db/changelog/changes/005-create-products.yaml
+  - include:
+      file: db/changelog/changes/006-create-users-roles-policies.yaml
+  - include:
+      file: db/changelog/changes/007-seed-admin-user.yaml
+  - include:
+      file: db/changelog/changes/008-seed-admin-resource-policies.yaml
+  - include:
+      file: db/changelog/changes/009-create-refresh-tokens.yaml
+  - include:
+      file: db/changelog/changes/010-update-admin-password.yaml
+  - include:
+      file: db/changelog/changes/011-create-role-policy.yaml

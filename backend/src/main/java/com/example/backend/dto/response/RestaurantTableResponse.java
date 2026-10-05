@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -13,6 +14,6 @@ public class RestaurantTableResponse {
     private UUID branchId;
     private String qrToken;
     private String status;
-    private String createdAt;
-    private String updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
